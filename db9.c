@@ -130,7 +130,7 @@ static char db9Init(void)
 {
 	unsigned char sreg;
 	unsigned char bits[READ_CONTROLLER_SIZE];
-	
+
 	sreg = SREG;
 	cli();
 
@@ -139,7 +139,7 @@ static char db9Init(void)
 
 	DDRD &= ~0x40; // PD6 = Pin9 = B2 INPUT
 	PORTD |= 0x40; // Set to High
-	
+
 	DDRC |= 0x20;	// PC5 = Pin7 =  SELECT OUTPUT
 	PORTC |= 0x20;	// Set to High
 
@@ -153,28 +153,32 @@ static char db9Init(void)
 
 	cur_id = INPUT_TYPE_SMS;
 
-	// Megadrive 3 & 6 Button detection
-	if ((bits[0]&0xf) == 0xf) {
-		if ((bits[1]&0xf) == 0x3)
-		{
-			if (	((bits[3] & 0xf) != 0x3)  ||
-					((bits[4] & 0xf) != 0x3) ) {
-				cur_id = INPUT_TYPE_MD6;
-			}
-			else {
-				cur_id = INPUT_TYPE_MD;
+    #ifdef FORCE_MD6
+		cur_id = INPUT_TYPE_MD6;
+	#else
+		// Megadrive 3 & 6 Button detection
+		if ((bits[0]&0xf) == 0xf) {
+			if ((bits[1]&0xf) == 0x3)
+			{
+				if (	((bits[3] & 0xf) != 0x3)  ||
+						((bits[4] & 0xf) != 0x3) ) {
+					cur_id = INPUT_TYPE_MD6;
+				}
+				else {
+					cur_id = INPUT_TYPE_MD;
+				}
 			}
 		}
-	}
 
-	if (!(bits[1] & 0x20)) { // if start button initially held down
-		cur_id = INPUT_TYPE_MD6;
-	}
+		if (!(bits[1] & 0x20)) { // if start button initially held down
+			cur_id = INPUT_TYPE_MD6;
+		}
 
-	// autodetect if up is held for CD32 Compatibilty
-	if (!(bits[0] & 0x01) || !(bits[1] & 0x01) || !(bits[2] & 0x01) || !(bits[3] & 0x01) || !(bits[4] & 0x01)) {
-		isCD32 = 1;
-	}
+		// autodetect if up is held for CD32 Compatibilty
+		if (!(bits[0] & 0x01) || !(bits[1] & 0x01) || !(bits[2] & 0x01) || !(bits[3] & 0x01) || !(bits[4] & 0x01)) {
+			isCD32 = 1;
+		}
+    #endif
 
 	db9Update();
 
@@ -188,7 +192,7 @@ static void db9Update(void)
 	unsigned char data[READ_CONTROLLER_SIZE];
 	int x=0xff/2,y=0xff/2;
 	unsigned char button;
-	
+
 	/* 0: Up//Z
 	 * 1: Down//Y
 	 * 2: Left//X
@@ -196,9 +200,9 @@ static void db9Update(void)
 	 * 4: Btn B/A
 	 * 5: Btn C/Start/
 	 */
-	
+
 	if( isCD32 == 1 ) {
-	
+
 		_delay_us(100);
 		data[0] = SAMPLE();
 		data[1] = data[0];
@@ -213,14 +217,14 @@ static void db9Update(void)
 		last_read_controller_bytes[0]=x;
 		last_read_controller_bytes[1]=y;
 
-		/* 
+		/*
 		* PC0 = UP (IN, 1)
 		* PC1 = DOWN (IN, 1)
 		* PC2 = LEFT (IN,1 )
 		* PC3 = RIGHT (IN, 1)
 		* PC4 = CLK (OUT, 1)
 		* PD6 = DATA (IN, 0)
-		* PB0 = SHIFT (OUT, 0) 
+		* PB0 = SHIFT (OUT, 0)
 		*/
 
 		DDRC |= 0x10; // PC4 CLK OUT
@@ -258,7 +262,7 @@ static void db9Update(void)
 		if ( data[2]&0x02 ) last_read_controller_bytes[2] |= 0x40; // Start
 
 	} else {
-		
+
 		readController(data);
 
 		/* Buttons are active low. Invert the bits
@@ -295,15 +299,15 @@ static void db9Update(void)
 			if (data[0]&0x20) { last_read_controller_bytes[2] |= 0x02; } // Button 2
 		}
 	}
-	
-}	
+
+}
 
 static char db9Changed(char id)
 {
 	static int first = 1;
 	if (first) { first = 0;  return 1; }
-	
-	return memcmp(last_read_controller_bytes, 
+
+	return memcmp(last_read_controller_bytes,
 					last_reported_controller_bytes, GAMEPAD_BYTES);
 }
 
@@ -313,15 +317,15 @@ static char db9BuildReport(unsigned char *reportBuffer, char id)
 	{
 		memcpy(reportBuffer, last_read_controller_bytes, GAMEPAD_BYTES);
 	}
-	memcpy(last_reported_controller_bytes, 
-			last_read_controller_bytes, 
-			GAMEPAD_BYTES);	
+	memcpy(last_reported_controller_bytes,
+			last_read_controller_bytes,
+			GAMEPAD_BYTES);
 
 	return REPORT_SIZE;
 }
 
 static const char usbHidReportDescriptor[] PROGMEM = {
-    
+
 	0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
     0x09, 0x04,                    // USAGE (Game Pad) 0x05
     0xa1, 0x01,                    // COLLECTION (Application)
@@ -334,7 +338,7 @@ static const char usbHidReportDescriptor[] PROGMEM = {
 			0x75, 0x08,                    // REPORT_SIZE (8)
 			0x95, 0x02,                    // REPORT_COUNT (2)
 			0x81, 0x02,                    // INPUT (Data,Var,Abs)
-		
+
 			0x05, 0x09,                    // USAGE_PAGE (Button)
 			0x19, 0x01,                    // USAGE_MINIMUM (Button 1)
 			0x29, 0x08,                    // USAGE_MAXIMUM (Button 8)

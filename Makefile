@@ -3,7 +3,7 @@
 # Author: Monster Joysticks Ltd. <info@monsterjoysticks.com>
 # Copyright: (C) 2017 - 2019 Monster Joysticks Ltd. <info@monsterjoysticks.com>
 
-COMPILE = avr-gcc -Wall -Os -Iusbdrv -I. -mmcu=atmega8 -DF_CPU=12000000L
+COMPILE = avr-gcc -Wall -Os -Iusbdrv -I. -mmcu=atmega8 -DF_CPU=12000000L -DFORCE_MD6=1
 COMMON_OBJS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o
 HEXFILE=bin/main.hex
 
@@ -41,7 +41,7 @@ clean:
 	rm -f $(HEXFILE) main.lst main.obj main.cof main.list bin/main.map bin/main.eep.hex bin/main.bin *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s
 
 # file targets:
-main.bin:	$(OBJS)	db9.o devdesc.o 
+main.bin:	$(OBJS)	db9.o devdesc.o
 	$(COMPILE) -o bin/main.bin $(OBJS) -Wl,-Map=bin/main.map
 
 $(HEXFILE):	main.bin
